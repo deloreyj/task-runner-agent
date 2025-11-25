@@ -1,26 +1,21 @@
 import { Hono } from "hono";
-import type { ApiResponse, NameResponse, User } from "../types/types";
+import { getSandbox } from "@cloudflare/sandbox";
+import TasksApp from "./tasks-app";
+
+// Re-export Sandbox class from the SDK for Durable Object binding
+export { Sandbox } from "@cloudflare/sandbox";
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.get("/api/", (c) => {
-	const response: NameResponse = { name: "Cloudflare" };
-	return c.json(response);
-});
+// Mount task management routes - pass getSandbox helper
+app.route("/api/tasks", TasksApp);
 
-app.get("/api/user/:id", (c) => {
-	const id = c.req.param("id");
-	const user: User = {
-		id,
-		name: "John Doe",
-		email: "john@example.com",
-		createdAt: new Date().toISOString(),
-	};
-	const response: ApiResponse<User> = {
-		success: true,
-		data: user,
-	};
-	return c.json(response);
+// Health check endpoint
+app.get("/api/health", (c) => {
+	return c.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 export default app;
+
+// Export getSandbox for use in tasks-app
+export { getSandbox };

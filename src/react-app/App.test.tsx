@@ -1,28 +1,27 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import App from "./App";
 
 describe("App component", () => {
 	it("renders the main heading", () => {
 		render(<App />);
+		expect(screen.getByText(/Agentic Task Runner/i)).toBeInTheDocument();
+	});
+
+	it("renders the create task form", () => {
+		render(<App />);
+		expect(screen.getByText(/Create New Task/i)).toBeInTheDocument();
 		expect(
-			screen.getByText(/Vite \+ React \+ Hono \+ Cloudflare/i),
+			screen.getByLabelText(/GitHub Repository URL/i)
 		).toBeInTheDocument();
+		expect(screen.getByLabelText(/Branch/i)).toBeInTheDocument();
+		expect(screen.getByLabelText(/Task Description/i)).toBeInTheDocument();
 	});
 
-	it("increments count when button is clicked", async () => {
-		const user = userEvent.setup();
+	it("renders the run task button", () => {
 		render(<App />);
-		const button = screen.getByRole("button", { name: /increment/i });
-		expect(button).toHaveTextContent("Count is 0");
-		await user.click(button);
-		expect(button).toHaveTextContent("Count is 1");
-	});
-
-	it("displays initial name as unknown", () => {
-		render(<App />);
-		const button = screen.getByRole("button", { name: /get name/i });
-		expect(button).toHaveTextContent("Name from API: unknown");
+		expect(
+			screen.getByRole("button", { name: /Run Task/i })
+		).toBeInTheDocument();
 	});
 });
