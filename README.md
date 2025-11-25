@@ -1,211 +1,183 @@
-# Full-Stack Worker App Boilerplate
+# Agentic Task Runner
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/deloreyj/worker-app-boilerplate/tree/main)
+A minimal example of running AI coding agents in sandboxed containers. Give it a GitHub repo and a prompt, and watch an AI agent work on the task in real-time.
 
-## 🚀 Technology Stack
+## How It Works
 
-### Frontend
-- [**React 19**](https://react.dev/) - Modern UI library with cutting-edge features
-- [**Vite**](https://vite.dev/) - Lightning-fast build tooling and dev server
-- [**Tailwind CSS v4**](https://tailwindcss.com/) - Utility-first CSS framework
-- [**shadcn/ui**](https://ui.shadcn.com/) - High-quality, accessible component library
-- [**Storybook 9**](https://storybook.js.org/) - Component development and documentation
+1. **User submits a task** - Provide a GitHub repo URL and describe what you want done
+2. **Sandbox spins up** - A Cloudflare Sandbox container clones the repo
+3. **Agent starts working** - OpenCode CLI runs inside the container with your prompt
+4. **Watch in real-time** - SSE streams agent activity to the browser
+5. **Review changes** - View the git diff of what the agent modified
 
-### Backend
-- [**Hono**](https://hono.dev/) - Ultralight, modern backend framework
-- [**Cloudflare Workers**](https://developers.cloudflare.com/workers/) - Edge computing platform for global deployment
+## Architecture
 
-### Testing & Quality
-- [**Vitest**](https://vitest.dev/) - Fast unit test framework (3 separate test suites)
-- [**Playwright**](https://playwright.dev/) - Reliable end-to-end testing via Storybook
-- **TypeScript** - Full type safety across frontend and backend
-- **ESLint** - Code quality and consistency
-
-## ✨ Key Features
-
-- 🔥 Hot Module Replacement (HMR) for rapid development
-- 🎨 Component-driven development with Storybook
-- 📦 Full TypeScript support with shared types
-- 🧪 Comprehensive testing: unit, integration, and visual tests
-- 🎯 API routes with Hono's elegant routing
-- 🔄 Dual-context build system (frontend + backend)
-- ⚡ Zero-config deployment to Cloudflare's global network
-- 🔎 Built-in observability to monitor your Worker
-- 🌓 Dark mode support out of the box
-- ♿ Accessible components from shadcn/ui + Radix UI
-
-## 📐 Architecture
-
-This project uses a **dual-context build system** with three separate TypeScript contexts:
-
-1. **React App** (`src/react-app/`) - Client-side React application
-2. **Worker** (`src/worker/`) - Cloudflare Workers backend (Hono API)
-3. **Shared Code** (`src/components/`, `src/lib/`, `src/hooks/`) - Reusable UI components and utilities
-
-The Worker serves the React app as static assets and handles API routes under `/api/*`.
-
-**Path Aliases**: All imports use `@/*` aliases pointing to `src/`:
-```typescript
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+```
+┌─────────────────┐     ┌──────────────────────┐     ┌─────────────────────┐
+│   React UI      │────▶│  Cloudflare Worker   │────▶│  Sandbox Container  │
+│                 │     │  (Hono API)          │     │                     │
+│  - Task form    │◀────│  - /api/tasks        │◀────│  - Git clone        │
+│  - Event stream │ SSE │  - /api/tasks/:id/*  │     │  - OpenCode CLI     │
+│  - Diff viewer  │     │                      │     │  - Agent execution  │
+└─────────────────┘     └──────────────────────┘     └─────────────────────┘
 ```
 
-For detailed architecture documentation, see [CLAUDE.md](./CLAUDE.md) and [AGENTS.md](./AGENTS.md).
+### Key Components
 
-<!-- dash-content-end -->
+- **Worker** (`src/worker/`) - Hono API that manages sandbox lifecycle
+- **Sandbox** - Cloudflare container running OpenCode CLI
+- **React App** (`src/react-app/`) - UI for submitting tasks and viewing progress
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/tasks` | POST | Create a new task (clone repo, start agent) |
+| `/api/tasks/:id/events` | GET | SSE stream of agent activity |
+| `/api/tasks/:id/diff` | GET | Get git diff of changes |
+| `/api/tasks/:id/abort` | POST | Stop the agent (requires `?sessionId=`) |
 
 ## Getting Started
 
 ### Prerequisites
 
-This project uses **pnpm** as the package manager. Install it globally if you haven't already:
-
-```bash
-npm install -g pnpm
-```
+- Node.js 18+
+- pnpm (`npm install -g pnpm`)
+- Cloudflare account with Workers and Sandbox access
 
 ### Installation
-
-Install dependencies:
 
 ```bash
 pnpm install
 ```
 
-## Development
-
-### Primary Workflows
-
-Start the main development server (frontend + backend):
+### Development
 
 ```bash
 pnpm dev
 ```
 
-Your application will be available at [http://localhost:5173](http://localhost:5173).
+Open [http://localhost:5173](http://localhost:5173)
 
-Start Storybook for component development:
-
-```bash
-pnpm storybook
-```
-
-Storybook will be available at [http://localhost:6006](http://localhost:6006).
-
-### Code Quality
-
-Type check your code:
-
-```bash
-pnpm check
-```
-
-Lint your code:
-
-```bash
-pnpm lint
-```
-
-### Testing
-
-Run all tests (builds first, then runs all 3 test suites):
-
-```bash
-pnpm test
-```
-
-Run individual test suites:
-
-```bash
-pnpm test:worker     # Backend/API tests
-pnpm test:ui         # React component unit tests
-pnpm test:storybook  # Storybook visual/interaction tests
-```
-
-## Component Development
-
-This project follows a systematic component-driven development workflow:
-
-1. **Check existing components** - Review component files and Storybook stories
-2. **Compose or extend** - Build from existing components or add variants
-3. **Search shadcn registry** - Find pre-built components if needed
-4. **Add tests and stories** - Always update Storybook and add tests
-
-Add new shadcn/ui components:
-
-```bash
-pnpm dlx shadcn@latest add <component-name>
-```
-
-Components are installed to `src/components/ui/` and can be customized directly.
-
-For detailed workflow, see [CLAUDE.md](./CLAUDE.md#component-development).
-
-## Production
-
-Build your project for production:
+### Build & Deploy
 
 ```bash
 pnpm build
-```
-
-Preview your build locally:
-
-```bash
-pnpm preview
-```
-
-Deploy to Cloudflare Workers:
-
-```bash
 pnpm deploy
 ```
 
-Monitor your deployed worker:
+## Configuration
 
-```bash
-npx wrangler tail
+### Dockerfile.sandbox
+
+The sandbox container is built from `Dockerfile.sandbox`:
+
+```dockerfile
+FROM docker.io/cloudflare/sandbox:0.5.3
+RUN npm install -g opencode-ai
 ```
 
-## Project Documentation
+### Cloudflare WARP Certificate Setup
 
-- [CLAUDE.md](./CLAUDE.md) - Detailed guide for Claude Code AI assistant
-- [AGENTS.md](./AGENTS.md) - General AI coding assistant guide
+If you're running behind Cloudflare WARP, OpenCode's outbound API calls will fail with SSL certificate errors unless the WARP CA certificate is trusted inside the container.
 
-## Additional Resources
+To fix this, create `src/internal-scripts/install-cloudflare-warp-certs.sh` and ask a teammate for the contents
 
-### Framework & Libraries
-- [React Documentation](https://react.dev/)
-- [Vite Documentation](https://vite.dev/guide/)
-- [Hono Documentation](https://hono.dev/)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [shadcn/ui Documentation](https://ui.shadcn.com/)
-- [Storybook Documentation](https://storybook.js.org/docs)
-- [Vitest Documentation](https://vitest.dev/)
+The Dockerfile will automatically run this script if it exists. The script is gitignored since it's only needed for internal Cloudflare development.
 
-### Cloudflare Platform
-- [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-- [Workers Assets Documentation](https://developers.cloudflare.com/workers/static-assets/)
-- [Wrangler CLI Documentation](https://developers.cloudflare.com/workers/wrangler/)
+### Environment Variables
 
-## Environment Configuration
+The OpenCode process in the sandbox uses:
+- `NODE_EXTRA_CA_CERTS` - Points to the Cloudflare CA cert for Node.js
+- `NODE_TLS_REJECT_UNAUTHORIZED=0` - Fallback for proxy environments where cert installation isn't sufficient
 
-This project uses environment-specific configurations in `wrangler.jsonc`:
+## Usage via cURL
 
-- **Staging**: `pnpm deploy` (defaults to staging environment)
-- **Production**: Requires explicit configuration and verification
+You can interact with the API directly without the UI:
 
-All Wrangler commands should be scoped to an environment (typically `staging`).
+### Create a task
 
-## Contributing
+```bash
+curl -X POST http://localhost:5173/api/tasks \
+  -H "Content-Type: application/json" \
+  -d '{
+    "repoUrl": "https://github.com/user/repo",
+    "branch": "main",
+    "prompt": "Add a README.md file explaining this project"
+  }'
+```
 
-When contributing to this project:
+Response:
+```json
+{
+  "data": {
+    "id": "task-1234567890-abc123",
+    "status": "running",
+    "sessionId": "ses_abc123...",
+    "repoUrl": "https://github.com/user/repo",
+    "branch": "main",
+    "prompt": "Add a README.md file explaining this project",
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "startedAt": "2025-01-01T00:00:01.000Z"
+  }
+}
+```
 
-1. Follow the component development workflow outlined in [CLAUDE.md](./CLAUDE.md)
-2. Always add Storybook stories for UI components
-3. Write tests for new features
-4. Run `pnpm check` and `pnpm lint` before committing
-5. Ensure all tests pass with `pnpm test`
+### Stream events
+
+```bash
+curl -N http://localhost:5173/api/tasks/task-1234567890-abc123/events
+```
+
+This returns an SSE stream of agent activity:
+```
+data: {"type":"session.status","properties":{"status":{"type":"busy"}}}
+data: {"type":"message.part.updated","properties":{"delta":"I'll help you..."}}
+data: {"type":"tool.start","properties":{"part":{"tool":"write"}}}
+...
+```
+
+### Get the diff
+
+```bash
+curl http://localhost:5173/api/tasks/task-1234567890-abc123/diff
+```
+
+Response:
+```json
+{
+  "data": {
+    "diff": "diff --git a/README.md b/README.md\n+# My Project\n+...",
+    "taskId": "task-1234567890-abc123"
+  }
+}
+```
+
+### Abort a task
+
+```bash
+curl -X POST "http://localhost:5173/api/tasks/task-1234567890-abc123/abort?sessionId=ses_abc123..."
+```
+
+## Project Structure
+
+```
+src/
+├── worker/
+│   ├── index.ts        # Worker entry point
+│   └── tasks-app.ts    # Task management API
+├── react-app/
+│   ├── pages/
+│   │   ├── HomePage.tsx   # Task creation form
+│   │   └── TaskPage.tsx   # Live task view
+│   └── hooks/
+│       ├── use-task.ts        # Task mutations
+│       ├── use-task-events.ts # SSE subscription
+│       └── use-task-diff.ts   # Diff fetching
+└── types/
+    ├── task-schemas.ts     # API types & validation
+    └── opencode-events.ts  # SSE event types
+```
 
 ## License
 
