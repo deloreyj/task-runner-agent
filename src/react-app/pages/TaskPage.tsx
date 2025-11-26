@@ -16,8 +16,9 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Diff, Hunk } from "@/components/ui/diff";
+import { parseDiff } from "@/components/ui/diff/utils/parse";
 import type { TaskCreationResponse } from "@/types/task-schemas";
 import type { TaskEvent } from "@/types/opencode-events";
 
@@ -134,6 +135,36 @@ function EventLog({
 					</div>
 				))}
 			</div>
+		</div>
+	);
+}
+
+// Diff display component using the unified diff viewer
+function DiffDisplay({ diff }: { diff: string }) {
+	const files = parseDiff(diff);
+
+	if (files.length === 0) {
+		return (
+			<div className="p-4 text-muted-foreground text-sm">
+				No changes detected
+			</div>
+		);
+	}
+
+	return (
+		<div className="space-y-4 max-h-[600px] overflow-y-auto">
+			{files.map((file, index) => (
+				<div key={index} className="rounded-md border overflow-hidden">
+					<div className="bg-muted px-3 py-2 text-sm font-mono border-b">
+						{file.newPath || file.oldPath || "Unknown file"}
+					</div>
+					<Diff hunks={file.hunks} type={file.type}>
+						{file.hunks.map((hunk, hunkIndex) => (
+							<Hunk key={hunkIndex} hunk={hunk} />
+						))}
+					</Diff>
+				</div>
+			))}
 		</div>
 	);
 }
@@ -403,11 +434,7 @@ export function TaskPage() {
 								</CardDescription>
 							</CardHeader>
 							<CardContent>
-								<ScrollArea className="h-96 w-full rounded-md border bg-muted/50">
-									<pre className="text-sm font-mono p-4 whitespace-pre-wrap">
-										{diff || "No changes detected"}
-									</pre>
-								</ScrollArea>
+								<DiffDisplay diff={diff} />
 							</CardContent>
 						</Card>
 					)}

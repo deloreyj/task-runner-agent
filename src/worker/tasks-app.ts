@@ -79,8 +79,8 @@ async function curlJson<T>(
  */
 async function waitForOpenCode(
 	sandbox: Sandbox,
-	maxAttempts: number = 30,
-	intervalMs: number = 1000
+	maxAttempts: number = 60,
+	intervalMs: number = 500
 ): Promise<boolean> {
 	for (let i = 0; i < maxAttempts; i++) {
 		console.log(`[waitForOpenCode] Attempt ${i + 1}/${maxAttempts}...`);
@@ -119,7 +119,7 @@ app.post("", zValidator("json", CreateTaskSchema), async (c) => {
 		console.log(`[Task ${taskId}] Cloning repository: ${repoUrl}`);
 
 		const cloneResult = await sandbox.exec(
-			`git clone --branch ${branch} --single-branch ${repoUrl} /workspace/repo`
+			`git clone --depth 1 --branch ${branch} --single-branch ${repoUrl} /workspace/repo`
 		);
 
 		if (!cloneResult.success) {
